@@ -25,7 +25,7 @@ RUN git clone -b ${GITHUB_BRANCH} https://github.com/${GITHUB_USERNAME}/flowise.
         yarn build; \
     elif [ -f "pnpm-lock.yaml" ]; then \
         echo "Using PNPM" && \
-        npm install -g pnpm@8 && \
+        npm install -g pnpm@9 && \
         pnpm install && \
         pnpm build; \
     else \
