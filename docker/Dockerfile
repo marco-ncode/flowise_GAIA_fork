@@ -6,7 +6,7 @@ USER root
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 
 # Installa dipendenze di build
-RUN apk add --no-cache git python3 py3-pip make g++ build-base cairo-dev pango-dev
+RUN apk add --no-cache chromium git python3 py3-pip make g++ build-base cairo-dev pango-dev curl
 
 # Argomenti per il tuo fork
 ARG GITHUB_USERNAME
