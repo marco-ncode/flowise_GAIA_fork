@@ -20,19 +20,37 @@ ENV PUPPETEER_SKIP_DOWNLOAD=true
 WORKDIR /app
 
 # Clona il tuo fork dal branch specifico
-# IMPORTANTE: Sostituisci con i tuoi dati
 ARG GITHUB_USERNAME
 ARG GITHUB_BRANCH=main
 RUN git clone -b ${GITHUB_BRANCH} https://github.com/${GITHUB_USERNAME}/flowise.git .
 
-# Installa dipendenze e costruisci
-RUN npm install
-RUN npm run build
+# Rileva e usa il package manager corretto
+RUN if [ -f "yarn.lock" ]; then \
+        echo "Using Yarn" && \
+        npm install -g yarn && \
+        yarn install --network-timeout 100000; \
+    elif [ -f "pnpm-lock.yaml" ]; then \
+        echo "Using PNPM" && \
+        npm install -g pnpm && \
+        pnpm install; \
+    else \
+        echo "Using NPM with legacy peer deps" && \
+        npm install --legacy-peer-deps; \
+    fi
+
+# Build del progetto
+RUN if [ -f "yarn.lock" ]; then \
+        yarn build; \
+    elif [ -f "pnpm-lock.yaml" ]; then \
+        pnpm build; \
+    else \
+        npm run build; \
+    fi
 
 # Stage 2: Runtime
 FROM node:20-alpine
 
-# Installa runtime dependencies (come nel tuo Dockerfile originale)
+# Installa runtime dependencies
 RUN apk add --no-cache \
     chromium \
     git \
@@ -60,6 +78,9 @@ WORKDIR /app
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
+
+# Se esiste, copia anche yarn.lock o pnpm-lock.yaml
+COPY --from=builder /app/yarn.lock* /app/pnpm-lock.yaml* ./
 
 # Crea directories necessarie con permessi corretti
 RUN mkdir -p /app/packages/server/uploads /app/packages/server/logs /app/packages/server/.flowise && \
